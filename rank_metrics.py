@@ -203,7 +203,7 @@ def ndcg_at_k(r, k):
             (first element is the first item)
 
     Returns:
-        Discounted cumulative gain
+        Normalized discounted cumulative gain
     """
     dcg_max = dcg_at_k(sorted(r, reverse=True), k)
     if not dcg_max:
