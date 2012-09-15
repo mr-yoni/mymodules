@@ -3,9 +3,12 @@
 Useful Resources:
 http://www.cs.utexas.edu/~mooney/ir-course/slides/Evaluation.ppt
 http://www.nii.ac.jp/TechReports/05-014E.pdf
+http://www.stanford.edu/class/cs276/handouts/EvaluationNew-handout-6-per.pdf
+http://hal.archives-ouvertes.fr/docs/00/72/67/60/PDF/07-busa-fekete.pdf
 Learning to Rank for Information Retrieval (Tie-Yan Liu)
 """
 import numpy as np
+np.seterr(all='raise')
 
 
 def mean_reciprocal_rank(rs):
@@ -93,10 +96,10 @@ def precision_at_k(r, k):
         ValueError: len(r) must be >= k
     """
     assert k >= 1
-    r = np.asarray(r) != 0
-    if r.size < k:
+    r = np.asarray(r)[:k] != 0
+    if r.size != k:
         raise ValueError('Relevance score length < k')
-    return np.mean(r[:k])
+    return np.mean(r)
 
 
 def average_precision(r):
@@ -119,7 +122,10 @@ def average_precision(r):
         Average precision
     """
     r = np.asarray(r) != 0
-    return np.nan_to_num(np.mean([precision_at_k(r, k + 1) for k in range(r.size) if r[k]]))
+    out = [precision_at_k(r, k + 1) for k in range(r.size) if r[k]]
+    if not out:
+        return 0.
+    return np.mean(out)
 
 
 def mean_average_precision(rs):
@@ -142,6 +148,67 @@ def mean_average_precision(rs):
         Mean average precision
     """
     return np.mean([average_precision(r) for r in rs])
+
+
+def dcg_at_k(r, k):
+    """Score is discounted cumulative gain (dcg)
+
+    Relevance is positive real values.  Can use binary
+    as the previous methods.
+
+    Example from
+    http://www.stanford.edu/class/cs276/handouts/EvaluationNew-handout-6-per.pdf
+    >>> r = [3, 2, 3, 0, 0, 1, 2, 2, 3, 0]
+    >>> dcg_at_k(r, 1)
+    3.0
+    >>> dcg_at_k(r, 10)
+    9.6051177391888114
+    >>> dcg_at_k(r, 11)
+    9.6051177391888114
+
+    Args:
+        r: Relevance scores (list or numpy) in rank order
+            (first element is the first item)
+
+    Returns:
+        Discounted cumulative gain
+    """
+    r = np.asfarray(r)[:k]
+    if r.size:
+        return r[0] + np.sum(r[1:] / np.log2(np.arange(2, r.size + 1)))
+    return 0.
+
+
+def ndcg_at_k(r, k):
+    """Score is normalized discounted cumulative gain (ndcg)
+
+    Relevance is positive real values.  Can use binary
+    as the previous methods.
+
+    Example from
+    http://www.stanford.edu/class/cs276/handouts/EvaluationNew-handout-6-per.pdf
+    >>> r = [3, 2, 3, 0, 0, 1, 2, 2, 3, 0]
+    >>> ndcg_at_k(r, 1)
+    1.0
+    >>> r = [2, 1, 2, 0]
+    >>> ndcg_at_k(r, 4)
+    0.9203032077642922
+    >>> ndcg_at_k([0], 1)
+    0.0
+    >>> ndcg_at_k([1], 2)
+    1.0
+
+    Args:
+        r: Relevance scores (list or numpy) in rank order
+            (first element is the first item)
+
+    Returns:
+        Discounted cumulative gain
+    """
+    dcg_max = dcg_at_k(sorted(r, reverse=True), k)
+    if not dcg_max:
+        return 0.
+    return dcg_at_k(r, k) / dcg_max
 
 
 if __name__ == "__main__":
