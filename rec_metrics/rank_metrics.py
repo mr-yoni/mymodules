@@ -175,7 +175,7 @@ def dcg_at_k(scores):
         Discounted cumulative gain
     """
     assert scores
-    return scores[0] + sum(sc / log(ind, 2) for sc, ind in zip(scores[1:], range(2, len(scores)+1)))
+    return scores[0] + sum(sc / np.log(ind, 2) for sc, ind in zip(scores[1:], range(2, len(scores)+1)))
 
 
 def ndcg_at_k(predicted_scores, user_scores):
