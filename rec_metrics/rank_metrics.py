@@ -149,7 +149,7 @@ def mean_average_precision(rs):
     return np.mean([average_precision(r) for r in rs])
 
 
-def dcg_at_k(r, k, method=0):
+def dcg_at_k(scores):
     """Score is discounted cumulative gain (dcg)
 
     Relevance is positive real values.  Can use binary
@@ -157,19 +157,12 @@ def dcg_at_k(r, k, method=0):
 
     Example from
     http://www.stanford.edu/class/cs276/handouts/EvaluationNew-handout-6-per.pdf
-    >>> r = [3, 2, 3, 0, 0, 1, 2, 2, 3, 0]
-    >>> dcg_at_k(r, 1)
-    3.0
-    >>> dcg_at_k(r, 1, method=1)
-    3.0
-    >>> dcg_at_k(r, 2)
+    >>> scores = [3, 2]
+    >>> dcg_at_k(scores)
     5.0
-    >>> dcg_at_k(r, 2, method=1)
-    4.2618595071429155
-    >>> dcg_at_k(r, 10)
-    9.6051177391888114
-    >>> dcg_at_k(r, 11)
-    9.6051177391888114
+    >>> scores = [3, 2, 3, 0, 0, 1, 2, 2, 3, 0]
+    >>> dcg_at_k(scores)
+    9.605117739188811
 
     Args:
         r: Relevance scores (list or numpy) in rank order
@@ -181,18 +174,11 @@ def dcg_at_k(r, k, method=0):
     Returns:
         Discounted cumulative gain
     """
-    r = np.asfarray(r)[:k]
-    if r.size:
-        if method == 0:
-            return r[0] + np.sum(r[1:] / np.log2(np.arange(2, r.size + 1)))
-        elif method == 1:
-            return np.sum(r / np.log2(np.arange(2, r.size + 2)))
-        else:
-            raise ValueError('method must be 0 or 1.')
-    return 0.
+    assert scores
+    return scores[0] + sum(sc / log(ind, 2) for sc, ind in zip(scores[1:], range(2, len(scores)+1)))
 
 
-def ndcg_at_k(r, k, method=0):
+def ndcg_at_k(predicted_scores, user_scores):
     """Score is normalized discounted cumulative gain (ndcg)
 
     Relevance is positive real values.  Can use binary
@@ -200,18 +186,16 @@ def ndcg_at_k(r, k, method=0):
 
     Example from
     http://www.stanford.edu/class/cs276/handouts/EvaluationNew-handout-6-per.pdf
-    >>> r = [3, 2, 3, 0, 0, 1, 2, 2, 3, 0]
-    >>> ndcg_at_k(r, 1)
-    1.0
-    >>> r = [2, 1, 2, 0]
-    >>> ndcg_at_k(r, 4)
-    0.9203032077642922
-    >>> ndcg_at_k(r, 4, method=1)
-    0.96519546960144276
-    >>> ndcg_at_k([0], 1)
-    0.0
-    >>> ndcg_at_k([1], 2)
-    1.0
+    >>> predicted1 = [.4, .1, .8]
+    >>> predicted2 = [.0, .1, .4]
+    >>> predicted3 = [.4, .1, .0]
+    >>> actual = [.8, .4, .1, .0]
+    >>> ndcg_at_k(predicted1, actual[:3])
+    0.7954630596952451
+    >>> ndcg_at_k(predicted2, actual[:3])
+    0.2789754264360057
+    >>> ndcg_at_k(predicted3, actual[:3])
+    0.3958536780387228
 
     Args:
         r: Relevance scores (list or numpy) in rank order
@@ -223,10 +207,9 @@ def ndcg_at_k(r, k, method=0):
     Returns:
         Normalized discounted cumulative gain
     """
-    dcg_max = dcg_at_k(sorted(r, reverse=True), k, method)
-    if not dcg_max:
-        return 0.
-    return dcg_at_k(r, k, method) / dcg_max
+    assert len(predicted_scores) == len(user_scores)
+    idcg = dcg_at_k(sorted(user_scores, reverse=True))
+    return (dcg_at_k(predicted_scores) / idcg) if idcg > 0.0 else 0.0
 
 
 if __name__ == "__main__":
