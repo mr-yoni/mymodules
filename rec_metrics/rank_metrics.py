@@ -165,16 +165,12 @@ def dcg_at_k(scores):
     9.605117739188811
 
     Args:
-        r: Relevance scores (list or numpy) in rank order
-            (first element is the first item)
-        k: Number of results to consider
-        method: If 0 then weights are [1.0, 1.0, 0.6309, 0.5, 0.4307, ...]
-                If 1 then weights are [1.0, 0.6309, 0.5, 0.4307, ...]
+        scores: Relevance scores (list or numpy) in rank order
+                (first element is the first item)
 
     Returns:
         Discounted cumulative gain
     """
-    assert scores
     return scores[0] + sum(sc / np.log2(ind) for sc, ind in zip(scores[1:], range(2, len(scores)+1)))
 
 
@@ -186,6 +182,7 @@ def ndcg_at_k(predicted_scores, user_scores):
 
     Example from
     http://www.stanford.edu/class/cs276/handouts/EvaluationNew-handout-6-per.pdf
+
     >>> predicted1 = [.4, .1, .8]
     >>> predicted2 = [.0, .1, .4]
     >>> predicted3 = [.4, .1, .0]
@@ -198,11 +195,9 @@ def ndcg_at_k(predicted_scores, user_scores):
     0.3958536780387228
 
     Args:
-        r: Relevance scores (list or numpy) in rank order
-            (first element is the first item)
-        k: Number of results to consider
-        method: If 0 then weights are [1.0, 1.0, 0.6309, 0.5, 0.4307, ...]
-                If 1 then weights are [1.0, 0.6309, 0.5, 0.4307, ...]
+        predicted_scores:   Relevance scores (list or numpy) in rank order
+                            (first element is the first item)
+        user_scores:        The actual scores
 
     Returns:
         Normalized discounted cumulative gain
