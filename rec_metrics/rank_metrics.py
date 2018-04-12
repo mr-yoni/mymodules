@@ -7,8 +7,6 @@ http://www.stanford.edu/class/cs276/handouts/EvaluationNew-handout-6-per.pdf
 http://hal.archives-ouvertes.fr/docs/00/72/67/60/PDF/07-busa-fekete.pdf
 Learning to Rank for Information Retrieval (Tie-Yan Liu)
 """
-import numpy as np
-
 
 def mean_reciprocal_rank(rs):
     """Score is reciprocal of the rank of the first relevant item
@@ -19,7 +17,8 @@ def mean_reciprocal_rank(rs):
     >>> rs = [[0, 0, 1], [0, 1, 0], [1, 0, 0]]
     >>> mean_reciprocal_rank(rs)
     0.61111111111111105
-    >>> rs = np.array([[0, 0, 0], [0, 1, 0], [1, 0, 0]])
+    >>> from numpy import asarray
+    >>> rs = asarray([[0, 0, 0], [0, 1, 0], [1, 0, 0]])
     >>> mean_reciprocal_rank(rs)
     0.5
     >>> rs = [[0, 0, 0, 1], [1, 0, 0], [1, 0, 0]]
@@ -33,8 +32,9 @@ def mean_reciprocal_rank(rs):
     Returns:
         Mean reciprocal rank
     """
-    rs = (np.asarray(r).nonzero()[0] for r in rs)
-    return np.mean([1. / (r[0] + 1) if r.size else 0. for r in rs])
+    from numpy import asarray, mean
+    rs = (asarray(r).nonzero()[0] for r in rs)
+    return mean([1. / (r[0] + 1) if r.size else 0. for r in rs])
 
 
 def r_precision(r):
@@ -59,11 +59,12 @@ def r_precision(r):
     Returns:
         R Precision
     """
-    r = np.asarray(r) != 0
+    from numpy import asarray, mean
+    r = asarray(r) != 0
     z = r.nonzero()[0]
     if not z.size:
         return 0.
-    return np.mean(r[:z[-1] + 1])
+    return mean(r[:z[-1] + 1])
 
 
 def precision_at_k(r, k):
@@ -94,11 +95,12 @@ def precision_at_k(r, k):
     Raises:
         ValueError: len(r) must be >= k
     """
+    from numpy import asarray, mean
     assert k >= 1
-    r = np.asarray(r)[:k] != 0
+    r = asarray(r)[:k] != 0
     if r.size != k:
         raise ValueError('Relevance score length < k')
-    return np.mean(r)
+    return mean(r)
 
 
 def average_precision(r):
@@ -120,11 +122,12 @@ def average_precision(r):
     Returns:
         Average precision
     """
-    r = np.asarray(r) != 0
+    from numpy import asarray, mean
+    r = asarray(r) != 0
     out = [precision_at_k(r, k + 1) for k in range(r.size) if r[k]]
     if not out:
         return 0.
-    return np.mean(out)
+    return mean(out)
 
 
 def mean_average_precision(rs):
@@ -146,7 +149,8 @@ def mean_average_precision(rs):
     Returns:
         Mean average precision
     """
-    return np.mean([average_precision(r) for r in rs])
+    from numpy import mean
+    return mean([average_precision(r) for r in rs])
 
 
 def dcg_at_k(scores):
@@ -171,7 +175,8 @@ def dcg_at_k(scores):
     Returns:
         Discounted cumulative gain
     """
-    return scores[0] + sum(sc / np.log2(ind) for sc, ind in zip(scores[1:], range(2, len(scores)+1)))
+    from numpy import log2
+    return scores[0] + sum(sc / log2(ind) for sc, ind in zip(scores[1:], range(2, len(scores)+1)))
 
 
 def ndcg_at_k(predicted_scores, user_scores):
